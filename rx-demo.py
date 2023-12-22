@@ -1,6 +1,6 @@
 from afskmodem import DigitalReceiver
 from afskmodem import DigitalModes
-receiver = DigitalReceiver(DigitalModes.default())
+receiver = DigitalReceiver(DigitalModes.afsk300())
 print("AFSKmodem RX Demo")
 while(True):
     print("Waiting for message...\n")
