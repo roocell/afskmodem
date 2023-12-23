@@ -1,0 +1,11 @@
+[Unit]
+Description=modemrx
+After=network-online.target
+[Service]
+ExecStart=python3 /home/pi/afskmodem/rx-demo.py
+WorkingDirectory=/home/pi/afskmodem
+Restart=always
+RestartSec=0
+
+[Install]
+WantedBy=multi-user.target
