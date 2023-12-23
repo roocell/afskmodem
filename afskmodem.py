@@ -9,6 +9,7 @@ import struct
 import pyaudio
 from datetime import datetime
 from time import sleep
+import numpy
 
 # ----- Constants -----
 
@@ -22,10 +23,12 @@ LOG_LEVEL = -1
 TRAINING_SEQUENCE_TIME = 0.6
 
 # Amplitude at which decoding starts (0-32768, Default 18000 [-5.2 dBfs])
-AMP_START_THRESHOLD = 18000
+#15000
+AMP_START_THRESHOLD = 15000
 
 # Amplitude at which decoding stops (0-32768, Default 14000 [-7.4 dBfs])
-AMP_END_THRESHOLD = 14000
+#12000
+AMP_END_THRESHOLD = 12000
 
 # Amplitude function deadzone (0-32768, Default 128 [-48.2 dBfs])
 AMP_DEADZONE = 128
@@ -373,11 +376,13 @@ class DigitalReceiver:
             chunk_amplitude = self.__avgDeviationBytes(block_frames)
             # Record if we hear a signal
             if(chunk_amplitude > self.amp_start_threshold):
+                print(chunk_amplitude)
                 while(chunk_amplitude > self.amp_end_threshold):
                     # Record until we no longer hear a signal
                     block_frames = stream.read(CHUNK_FRAMES)
                     recorded_frames.append(block_frames)
                     chunk_amplitude = self.__avgDeviationBytes(block_frames)
+                    print(chunk_amplitude)
                 stream.stop_stream()
                 stream.close()
                 pa.terminate()
@@ -565,8 +570,41 @@ class DigitalTransmitter:
         training_block = self.__getTrainingBlock()
         tx_bits = training_block + ecc_bits
         tx_audio = self.__encodeBits(tx_bits)
-        self.__playWaveform(tx_audio)
+
+        # Write audio data to a WAV file
+        output_file = "out.wav"
+
+        if 'output_file' in locals():
+            # open previous to append
+            frames=[]
+            try:
+                with wave.open(output_file, 'rb') as wave0:
+                    frames.append([wave0.getparams(),wave0.readframes(wave0.getnframes())])
+                    wave0.close()
+            except:
+                print("file probably doesn't exist")
+
+            channels = 2
+            with wave.open(output_file, 'wb') as wf:
+                wf.setnchannels(channels)  # Assuming mono audio
+                wf.setsampwidth(pyaudio.PyAudio().get_sample_size(FORMAT))
+                wf.setframerate(SAMPLE_RATE)
+                if len(frames) > 0:
+                    wf.writeframes(frames[0][1]) # append previous file
+                wf.writeframes(tx_audio)
+
+                # Append 5 seconds of silence
+                silence_duration_sec = 15
+                silence_frames = int(SAMPLE_RATE * silence_duration_sec)
+                silence_data = numpy.zeros(silence_frames * channels, dtype=numpy.int16)
+                wf.writeframes(silence_data.tobytes())
+            Log.print(0, "Transmitter: Audio data written to " + output_file)
+        else:
+            self.__playWaveform(tx_audio)
+
+
         Log.print(0, "Transmitter: Done.")
+
     
     # Estimate transmission time in seconds
     def estimateTxTime(self, length: int): 
