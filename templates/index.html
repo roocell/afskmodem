@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The screeches</title>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='elf.jpg') }}" alt="Elf Image" width="250">
+    <BR>
+    <!-- Embedded audio player with autoplay -->
+    <audio controls autoplay loop>
+        <source src="static/out.wav" type="audio/wav">
+        Your browser does not support the audio element.
+    </audio>
+</body>
+</html>
